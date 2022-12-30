@@ -1,0 +1,281 @@
+-- DU_PoOng inspired bye ideas of Nolan Bushnell 1972
+-- version 1.05 in DU by Modgud 
+-- DRM free
+
+-- refresh rate part 1
+if tick == nil then tick = 1 end
+if frames == nil then frames = {} end
+if count == nil then count = 0 end
+count = count + 1 
+frames[count] = 1/getDeltaTime()
+
+requestAnimationFrame(tick)
+
+-- layer
+background = createLayer()
+playfield = createLayer()
+numbers = createLayer()
+
+-- points
+if leftP == nil then leftP = 0 end
+if rightP == nil then rightP = 0 end
+
+-- mid lane
+setDefaultStrokeWidth(background, Shape_Box, 5)
+for i = 0,15,1 do
+    addBox(background, 510, 18 + i*37, 6, 20)     
+end
+
+myInput = getInput()
+
+if myInput == "START" then
+    leftP = 0
+    rightP = 0
+    heightR = nil
+    heigthL = nil
+    myInput = "0"
+end
+
+if myInput ~= "EXIT" then
+
+    move = tonumber(myInput)
+
+    -- ball
+    if pongX == nil then pongX = 512 end
+    if pongY == nil then pongY = 306 end
+    if moveX == nil then moveX = math.random(6,9) end
+    if moveY == nil then moveY = math.random(3,7) end
+    if turn == nil then turn = true end
+
+    -- last point
+    if lastLeft == nil then lastLeft = true end
+
+    -- right player
+    if heightR == nil then heightR = 306 end
+    moveR = 12
+
+    -- left player
+    if heightL == nil then heightL = 306 end
+    moveL = 12
+
+    -- paint ball
+    setNextFillColor(background, 1, 1, 1, 1)
+    addBox(playfield, pongX, pongY, 14, 14)
+
+    -- reflect top / down
+    if pongY >= 579 then moveY = moveY * (-1) end
+    if pongY <= 20 then moveY = moveY * (-1) end
+
+    -- move ball
+    pongX = pongX + moveX
+    pongY = pongY + moveY
+
+    -- make a point
+    if pongX >= 1024 then 
+        leftP = leftP + 1 
+        lastLeft = true
+    end 
+    if pongX <= 0 then
+        rightP = rightP + 1 
+        lastLeft = false
+    end 
+
+    -- create new ball
+    if pongX >= 1024 or pongX <= 0 then 
+        pongX = 512
+        pongY = 306    
+        moveX = math.random(6,9)    
+        moveY = math.random(3,7)
+        turn = true
+        if not lastLeft then moveX = moveX * (-1) end
+    end    
+
+    -- check one paddle
+    if moveX > 0 and not turn and pongX >= 512 then turn = true end
+
+    -- right paddle
+    if math.abs(heightR - pongY) <= moveR then 
+        heightR = pongY 
+    else
+        if heightR - pongY > 0 then heightR = heightR - moveR end
+        if heightR - pongY < 0 then heightR = heightR + moveR end
+    end
+    if heightR < 50 then heightR = 50 end
+    if heightR > 563 then heightR = 563 end
+    setNextFillColor(playfield, 1, 1, 1, 1)
+    addBox(playfield, 914, heightR - 30, 13, 60)
+
+    -- left paddle
+    if move == 1 and heightL <= 563 then heightL = heightL + moveL end
+    if move == -1 and heightL >= 50 then heightL = heightL - moveL end
+    setNextFillColor(playfield, 1, 1, 1, 1)
+    addBox(playfield, 97, heightL - 30, 13, 60)
+
+    -- reflect paddle
+    if pongX >= 900 and pongX <= 914 and heightR - 44 < pongY and heightR + 30 > pongY then 
+        moveX = math.min(14, moveX * 1.3) * (-1)
+        moveY = moveY * 1.3
+    end
+    if pongX <= 110 and pongX >= 96 and heightL - 44 < pongY and heightL + 30 > pongY and turn then
+        if move == 0 then
+            moveY = moveY * 1.3 
+            moveX = math.min(14, math.abs(moveX) * 1.3)        
+        end
+        if (move == -1 and moveY > 0) or (move == 1 and moveY < 0) then 
+            moveX = math.min(14, math.abs(moveX) * 1.8)        
+            moveY = math.max(1,moveY * 0.8)
+        end
+        if (move == -1 and moveY < 0) or (move == 1 and moveY > 0) then 
+            moveX = math.min(14, math.abs(moveX) * 0.8)                
+            moveY = moveY * 1.8
+        end    
+        turn = false
+    end
+
+else    
+    -- ball
+    if pongX == nil then pongX = 512 end
+    if pongY == nil then pongY = 306 end
+    if moveX == nil then moveX = math.random(11,14) end
+    if moveY == nil then moveY = math.random(10,13) end
+    if turn == nil then turn = true end
+
+    -- reflect top / down
+    if pongY >= 579 then moveY = moveY * (-1) end
+    if pongY <= 20 then moveY = moveY * (-1) end
+    
+    -- reflect left / right
+    if pongX >= 990 then moveX = moveX * (-1) end
+    if pongX <= 20 then moveX = moveX * (-1) end    
+    
+    -- paint ball
+    setNextFillColor(background, 1, 1, 1, 1)
+    addBox(playfield, pongX, pongY, 14, 14)  
+    
+    -- move ball
+    pongX = pongX + moveX
+    pongY = pongY + moveY    
+end
+
+-- numbers
+setDefaultFillColor(numbers, Shape_Box, 1, 1, 1, 1)
+
+for i=1,2,1 do
+    local x, y, point
+    if i == 1 then
+        x = 412
+        y = 40
+        point = leftP
+    else
+        x = 592
+        y = 40
+        point = rightP
+    end
+    
+    -- 0
+    if point == 0 then 
+        addBox(numbers, x, y, 50, 10)
+        addBox(numbers, x, y, 10, 80)
+        addBox(numbers, x + 40, y, 10, 80)
+        addBox(numbers, x, y + 70, 50, 10)
+    end    
+
+    -- 1
+    if point == 1 then
+        addBox(numbers, x + 40, y, 10, 80)
+    end    
+
+    -- 2
+    if point == 2 then 
+        addBox(numbers, x, y, 50, 10)
+        addBox(numbers, x + 40, y, 10, 40)
+        addBox(numbers, x, y + 35, 50, 10)
+        addBox(numbers, x, y + 35, 10, 40)
+        addBox(numbers, x, y + 70, 50, 10)
+    end    
+
+    -- 3
+    if point == 3 then 
+        addBox(numbers, x, y, 50, 10)
+        addBox(numbers, x + 40, y, 10, 80)
+        addBox(numbers, x, y + 35, 50, 10)
+        addBox(numbers, x, y + 70, 50, 10)
+    end    
+
+    -- 4
+    if point == 4 then 
+        addBox(numbers, x, y, 10, 40)
+        addBox(numbers, x + 40, y, 10, 80)
+        addBox(numbers, x, y + 35, 50, 10)    
+    end 
+
+    -- 5
+    if point == 5 then 
+        addBox(numbers, x, y, 50, 10)
+        addBox(numbers, x, y, 10, 40)
+        addBox(numbers, x, y + 35, 50, 10)
+        addBox(numbers, x + 40, y + 35, 10, 40)
+        addBox(numbers, x, y + 70, 50, 10)
+    end    
+
+    -- 6
+    if point == 6 then 
+        addBox(numbers, x, y, 50, 10)
+        addBox(numbers, x, y, 10, 80)
+        addBox(numbers, x, y + 35, 50, 10)
+        addBox(numbers, x+ 40, y + 35, 10, 40)
+        addBox(numbers, x, y + 70, 50, 10)
+    end    
+
+    -- 7
+    if point == 7 then 
+        addBox(numbers, x, y, 50, 10)
+        addBox(numbers, x + 40, y, 10, 80)    
+    end    
+
+    -- 8
+    if point == 8 then 
+        addBox(numbers, x, y, 50, 10)
+        addBox(numbers, x, y, 10, 80)
+        addBox(numbers, x + 40, y, 10, 80)
+        addBox(numbers, x, y + 35, 40, 10)
+        addBox(numbers, x, y + 70, 50, 10)
+    end    
+
+    -- 9
+    if point == 9 then 
+        addBox(numbers, x, y, 50, 10)
+        addBox(numbers, x, y, 10, 40)
+        addBox(numbers, x + 40, y, 10, 80)
+        addBox(numbers, x, y + 35, 40, 10)
+        addBox(numbers, x, y + 70, 50, 10)
+    end    
+    
+    -- 10
+    if point == 10 then 
+        addBox(numbers, x, y, 50, 10)
+        addBox(numbers, x, y, 10, 80)
+        addBox(numbers, x + 40, y, 10, 80)
+        addBox(numbers, x, y + 70, 50, 10)
+        addBox(numbers, x - 30, y, 10, 80)
+    end    
+
+    -- 11
+    if point == 11 or point == 12 then 
+        addBox(numbers, x + 40, y, 10, 80)        
+        addBox(numbers, x - 30, y, 10, 80)
+    end                
+end    
+
+if leftP == 12 or rightP == 12 then setOutput("END") end
+
+-- refresh rate part 2
+if count == 10 then
+    count = 0
+    local average = 0
+    for i = 1, 10, 1 do average = average + frames[i] end
+    average = average / 10
+    if average >= 36 then tick = tick + 1 end
+    if average < 18 and tick > 1 then tick = tick - 1 end    
+    frames = nil
+end
